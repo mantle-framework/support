@@ -29,8 +29,6 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 
 	/**
 	 * The underlying string value.
-	 *
-	 * @var string
 	 */
 	protected string $value = '';
 
@@ -207,6 +205,16 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	}
 
 	/**
+	 * Alias to ends_with().
+	 *
+	 * @param  string|iterable<string> $needles
+	 * @return bool
+	 */
+	public function endsWith( $needles ) {
+		return $this->ends_with( $needles );
+	}
+
+	/**
 	 * Determine if a given string ends with a given substring.
 	 *
 	 * @param  string|iterable<string> $needles
@@ -220,9 +228,8 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	 * Determine if the string is an exact match with the given value.
 	 *
 	 * @param  \Mantle\Support\Stringable|string $value
-	 * @return bool
 	 */
-	public function exactly( $value ) {
+	public function exactly( $value ): bool {
 		if ( $value instanceof Stringable ) {
 			$value = $value->toString();
 		}
@@ -281,6 +288,34 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	}
 
 	/**
+	 * Ensure the string has a single trailing slash.
+	 *
+	 * @return static
+	 */
+	public function trailingSlash() {
+		return new static( Str::trailing_slash( $this->value ) );
+	}
+
+	/**
+	 * Remove a trailing slash from the string.
+	 *
+	 * @return static
+	 */
+	public function untrailingSlash() {
+		return new static( Str::untrailing_slash( $this->value ) );
+	}
+
+	/**
+	 * Remove a trailing string from the string.
+	 *
+	 * @param  string $cap
+	 * @return static
+	 */
+	public function untrailing( $cap ) {
+		return new static( rtrim( $this->value, $cap ) );
+	}
+
+	/**
 	 * Determine if a given string matches a given pattern.
 	 *
 	 * @param  string|iterable<string> $pattern
@@ -319,10 +354,8 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 
 	/**
 	 * Determine if the given string is empty.
-	 *
-	 * @return bool
 	 */
-	public function is_empty() {
+	public function is_empty(): bool {
 		return '' === $this->value;
 	}
 
@@ -348,9 +381,8 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	 * Return the length of the given string.
 	 *
 	 * @param  string|null $encoding
-	 * @return int
 	 */
-	public function length( $encoding = null ) {
+	public function length( $encoding = null ): int {
 		return Str::length( $this->value, $encoding );
 	}
 
@@ -738,6 +770,15 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	}
 
 	/**
+	 * Convert a value to studly caps case using underscores.
+	 *
+	 * @return static
+	 */
+	public function studlyUnderscore() {
+		return new static( Str::studly_underscore( $this->value ) );
+	}
+
+	/**
 	 * Returns the portion of the string specified by the start and length parameters.
 	 *
 	 * @param  int      $start
@@ -755,9 +796,8 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	 * @param  string   $needle
 	 * @param  int      $offset
 	 * @param  int|null $length
-	 * @return int
 	 */
-	public function substr_count( $needle, $offset = 0, $length = null ) {
+	public function substr_count( $needle, $offset = 0, $length = null ): int {
 		return Str::substr_count( $this->value, $needle, $offset, $length );
 	}
 
@@ -1026,7 +1066,7 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	/**
 	 * Dump the string and end the script.
 	 */
-	public function dd() {
+	public function dd(): void {
 		$this->dump();
 
 		exit( 1 );
@@ -1052,19 +1092,15 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 
 	/**
 	 * Get the underlying string value as an integer.
-	 *
-	 * @return int
 	 */
-	public function to_integer() {
+	public function to_integer(): int {
 		return intval( $this->value );
 	}
 
 	/**
 	 * Get the underlying string value as a float.
-	 *
-	 * @return float
 	 */
-	public function to_float() {
+	public function to_float(): float {
 		return floatval( $this->value );
 	}
 
@@ -1096,8 +1132,6 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 
 	/**
 	 * Convert the object to a string when JSON encoded.
-	 *
-	 * @return string
 	 */
 	public function jsonSerialize(): string {
 		return $this->__toString();
@@ -1107,7 +1141,6 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	 * Determine if the given offset exists.
 	 *
 	 * @param  mixed $offset
-	 * @return bool
 	 */
 	public function offsetExists( mixed $offset ): bool {
 		return isset( $this->value[ $offset ] );
@@ -1117,7 +1150,6 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	 * Get the value at the given offset.
 	 *
 	 * @param  mixed $offset
-	 * @return string
 	 */
 	public function offsetGet( mixed $offset ): string {
 		return $this->value[ $offset ];
@@ -1128,7 +1160,6 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	 *
 	 * @param  mixed $offset
 	 * @param  mixed $value
-	 * @return void
 	 */
 	public function offsetSet( mixed $offset, mixed $value ): void {
 		$this->value[ $offset ] = $value;
@@ -1138,7 +1169,6 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	 * Unset the value at the given offset.
 	 *
 	 * @param  mixed $offset
-	 * @return void
 	 */
 	public function offsetUnset( mixed $offset ): void {
 		unset( $this->value[ $offset ] );
@@ -1156,10 +1186,8 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 
 	/**
 	 * Get the raw string value.
-	 *
-	 * @return string
 	 */
-	public function __toString() {
-		return (string) $this->value;
+	public function __toString(): string {
+		return $this->value;
 	}
 }
