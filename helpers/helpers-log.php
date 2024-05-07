@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
  * @param  string $message Log message.
  * @param  array  $context Log context.
  */
-function info( string $message, array $context = [] ): void {
+function info( string $message, array $context = [] ) {
 	app( 'log' )->info( $message, $context );
 }
 
@@ -26,6 +26,7 @@ function info( string $message, array $context = [] ): void {
  *
  * @param  string|null $message Log message, optional.
  * @param  array       $context Log context, optional.
+ * @return LoggerInterface|null
  */
 function logger( string $message = null, array $context = [] ): ?LoggerInterface {
 	if ( is_null( $message ) ) {

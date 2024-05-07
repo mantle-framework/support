@@ -13,23 +13,44 @@ namespace Mantle\Support;
  * @mixin Enumerable
  */
 class Higher_Order_Collection_Proxy {
+
+	/**
+	 * The collection being operated on.
+	 *
+	 * @var Enumerable
+	 */
+	protected $collection;
+
+	/**
+	 * The method being proxied.
+	 *
+	 * @var string
+	 */
+	protected $method;
+
 	/**
 	 * Create a new proxy instance.
 	 *
-	 * @param  Enumerable $collection The collection being operated on.
-	 * @param  string     $method     The method being proxied.
+	 * @param  Enumerable $collection
+	 * @param  string     $method
 	 * @return void
 	 */
-	public function __construct( protected Enumerable $collection, protected string $method ) {}
+	public function __construct( Enumerable $collection, $method ) {
+		$this->method     = $method;
+		$this->collection = $collection;
+	}
 
 	/**
 	 * Proxy accessing an attribute onto the collection items.
 	 *
 	 * @param  string $key
+	 * @return mixed
 	 */
-	public function __get( string $key ): mixed {
+	public function __get( $key ) {
 		return $this->collection->{ $this->method }(
-			fn ( $value ) => is_array( $value ) ? $value[ $key ] : $value->{$key}
+			function ( $value ) use ( $key ) {
+				return is_array( $value ) ? $value[ $key ] : $value->{$key};
+			}
 		);
 	}
 
@@ -38,10 +59,13 @@ class Higher_Order_Collection_Proxy {
 	 *
 	 * @param  string $method
 	 * @param  array  $parameters
+	 * @return mixed
 	 */
-	public function __call( string $method, array $parameters ): mixed {
+	public function __call( $method, $parameters ) {
 		return $this->collection->{ $this->method }(
-			fn ( $value) => $value->{ $method }( ...$parameters )
+			function ( $value ) use ( $method, $parameters ) {
+				return $value->{ $method }( ...$parameters );
+			}
 		);
 	}
 }

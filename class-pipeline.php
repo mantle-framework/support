@@ -21,6 +21,13 @@ class Pipeline implements PipelineContract {
 	use Makeable;
 
 	/**
+	 * The container implementation.
+	 *
+	 * @var Container|null
+	 */
+	protected ?Container $container;
+
+	/**
 	 * The object being passed through the pipeline.
 	 *
 	 * @var mixed
@@ -46,7 +53,8 @@ class Pipeline implements PipelineContract {
 	 *
 	 * @param Container|null $container Container instance.
 	 */
-	public function __construct( protected ?Container $container = null ) {
+	public function __construct( Container $container = null ) {
+		$this->container = $container;
 	}
 
 	/**
@@ -108,7 +116,9 @@ class Pipeline implements PipelineContract {
 	 */
 	public function thenReturn() {
 		return $this->then(
-			fn ( $passable) => $passable
+			function ( $passable ) {
+				return $passable;
+			}
 		);
 	}
 
@@ -134,7 +144,8 @@ class Pipeline implements PipelineContract {
 	 * @return \Closure
 	 */
 	protected function carry() {
-		return fn ( $stack, $pipe) => function ( $passable ) use ( $stack, $pipe ) {
+		return function ( $stack, $pipe ) {
+			return function ( $passable ) use ( $stack, $pipe ) {
 				try {
 					if ( is_callable( $pipe ) ) {
 						// If the pipe is a callable, then we will call it directly, but otherwise we
@@ -166,6 +177,7 @@ class Pipeline implements PipelineContract {
 					return $this->handle_exception( $passable, $e );
 				}
 			};
+		};
 	}
 
 	/**
@@ -222,10 +234,11 @@ class Pipeline implements PipelineContract {
 	 *
 	 * @param mixed     $passable Passable object.
 	 * @param Throwable $e Exception thrown.
+	 * @return mixed
 	 *
 	 * @throws Throwable Thrown when an exception is passed.
 	 */
-	protected function handle_exception( $passable, Throwable $e ): never {
+	protected function handle_exception( $passable, Throwable $e ) {
 		throw $e;
 	}
 }

@@ -162,7 +162,9 @@ trait Enumerates_Values {
 	public function contains_strict( $key, $value = null ) {
 		if ( func_num_args() === 2 ) {
 			return $this->contains(
-				fn ( $item) => data_get( $item, $key ) === $value
+				function ( $item ) use ( $key, $value ) {
+					return data_get( $item, $key ) === $value;
+				}
 			);
 		}
 
@@ -183,6 +185,7 @@ trait Enumerates_Values {
 	 * Dump the items and end the script.
 	 *
 	 * @param  mixed ...$args
+	 * @return void
 	 */
 	public function dd( ...$args ): void {
 		$this->dump( ...$args );
@@ -192,6 +195,8 @@ trait Enumerates_Values {
 
 	/**
 	 * Dump the items.
+	 *
+	 * @return static
 	 */
 	public function dump(): static {
 		( new static( func_get_args() ) )
@@ -338,7 +343,9 @@ trait Enumerates_Values {
 	 */
 	public function map_into( $class ) {
 		return $this->map(
-			fn ( $value, $key) => new $class( $value, $key )
+			function ( $value, $key ) use ( $class ) {
+				return new $class( $value, $key );
+			}
 		);
 	}
 
@@ -352,11 +359,17 @@ trait Enumerates_Values {
 		$callback = $this->value_retriever( $callback );
 
 		return $this->map(
-			fn ( $value) => $callback( $value )
+			function ( $value ) use ( $callback ) {
+				return $callback( $value );
+			}
 		)->filter(
-			fn ( $value) => ! is_null( $value )
+			function ( $value ) {
+				return ! is_null( $value );
+			}
 		)->reduce(
-			fn ( $result, $value) => is_null( $result ) || $value < $result ? $value : $result
+			function ( $result, $value ) {
+				return is_null( $result ) || $value < $result ? $value : $result;
+			}
 		);
 	}
 
@@ -370,7 +383,9 @@ trait Enumerates_Values {
 		$callback = $this->value_retriever( $callback );
 
 		return $this->filter(
-			fn ( $value) => ! is_null( $value )
+			function ( $value ) {
+				return ! is_null( $value );
+			}
 		)->reduce(
 			function ( $result, $item ) use ( $callback ) {
 				$value = $callback( $item );
@@ -428,13 +443,17 @@ trait Enumerates_Values {
 	 */
 	public function sum( $callback = null ) {
 		if ( is_null( $callback ) ) {
-			$callback = fn ( $value) => $value;
+			$callback = function ( $value ) {
+				return $value;
+			};
 		} else {
 			$callback = $this->value_retriever( $callback );
 		}
 
 		return $this->reduce(
-			fn ( $result, $item) => $result + $callback( $item ),
+			function ( $result, $item ) use ( $callback ) {
+				return $result + $callback( $item );
+			},
 			0
 		);
 	}
@@ -546,7 +565,9 @@ trait Enumerates_Values {
 		$values = $this->get_arrayable_items( $values );
 
 		return $this->filter(
-			fn ( $item) => in_array( data_get( $item, $key ), $values, $strict )
+			function ( $item ) use ( $key, $values, $strict ) {
+				return in_array( data_get( $item, $key ), $values, $strict );
+			}
 		);
 	}
 
@@ -581,7 +602,9 @@ trait Enumerates_Values {
 	 */
 	public function where_not_between( $key, $values ) {
 		return $this->filter(
-			fn ( $item) => data_get( $item, $key ) < reset( $values ) || data_get( $item, $key ) > end( $values )
+			function ( $item ) use ( $key, $values ) {
+				return data_get( $item, $key ) < reset( $values ) || data_get( $item, $key ) > end( $values );
+			}
 		);
 	}
 
@@ -597,7 +620,9 @@ trait Enumerates_Values {
 		$values = $this->get_arrayable_items( $values );
 
 		return $this->reject(
-			fn ( $item) => in_array( data_get( $item, $key ), $values, $strict )
+			function ( $item ) use ( $key, $values, $strict ) {
+				return in_array( data_get( $item, $key ), $values, $strict );
+			}
 		);
 	}
 
@@ -660,9 +685,11 @@ trait Enumerates_Values {
 		$use_as_callable = $this->use_as_callable( $callback );
 
 		return $this->filter(
-			fn ( $value, $key) => $use_as_callable
+			function ( $value, $key ) use ( $callback, $use_as_callable ) {
+				return $use_as_callable
 				? ! $callback( $value, $key )
-				: $value != $callback
+				: $value != $callback;
+			}
 		);
 	}
 
@@ -716,17 +743,10 @@ trait Enumerates_Values {
 	 */
 	public function to_array() {
 		return $this->map(
-			fn ( $value ) => $value instanceof Arrayable ? $value->to_array() : $value,
+			function ( $value ) {
+				return $value instanceof Arrayable ? $value->to_array() : $value;
+			}
 		)->all();
-	}
-
-	/**
-	 * Alias for the "to_array" method.
-	 *
-	 * @return array<TKey, TValue>
-	 */
-	public function toArray() { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
-		return $this->to_array();
 	}
 
 	/**
@@ -769,12 +789,16 @@ trait Enumerates_Values {
 	 */
 	public function count_by( $callback = null ) {
 		if ( is_null( $callback ) ) {
-			$callback = fn ( $value) => $value;
+			$callback = function ( $value ) {
+				return $value;
+			};
 		}
 
 		return new static(
 			$this->group_by( $callback )->map(
-				fn ( $value) => $value->count()
+				function ( $value ) {
+					return $value->count();
+				}
 			)
 		);
 	}
@@ -792,8 +816,9 @@ trait Enumerates_Values {
 	 * Add a method to the list of proxied methods.
 	 *
 	 * @param  string $method
+	 * @return void
 	 */
-	public static function proxy( $method ): void {
+	public static function proxy( $method ) {
 		static::$proxies[] = $method; // phpcs:ignore WordPressVIPMinimum.Variables.VariableAnalysis.StaticOutsideClass
 	}
 
@@ -863,7 +888,9 @@ trait Enumerates_Values {
 
 			$strings = array_filter(
 				[ $retrieved, $value ],
-				fn ( $value) => is_string( $value ) || ( is_object( $value ) && method_exists( $value, '__toString' ) )
+				function ( $value ) {
+					return is_string( $value ) || ( is_object( $value ) && method_exists( $value, '__toString' ) );
+				}
 			);
 
 			if ( count( $strings ) < 2 && count( array_filter( [ $retrieved, $value ], 'is_object' ) ) == 1 ) {
@@ -898,8 +925,9 @@ trait Enumerates_Values {
 	 * Determine if the given value is callable, but not a string.
 	 *
 	 * @param  mixed $value
+	 * @return bool
 	 */
-	protected function use_as_callable( $value ): bool {
+	protected function use_as_callable( $value ) {
 		return ! is_string( $value ) && is_callable( $value );
 	}
 

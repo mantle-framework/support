@@ -17,6 +17,8 @@ class Pluralizer {
 
 	/**
 	 * The cached inflector instance.
+	 *
+	 * @var Inflector|null
 	 */
 	protected static ?Inflector $inflector = null;
 
@@ -44,13 +46,14 @@ class Pluralizer {
 	 *
 	 * @param  string               $value
 	 * @param  int|array|\Countable $count
+	 * @return string
 	 */
 	public static function plural( string $value, int|array|\Countable $count = 2 ): string {
 		if ( is_countable( $count ) ) {
 			$count = count( $count );
 		}
 
-		if ( abs( $count ) === 1 || static::uncountable( $value ) || preg_match( '/^(.*)[A-Za-z0-9\x{0080}-\x{FFFF}]$/u', $value ) == 0 ) {
+		if ( (int) abs( $count ) === 1 || static::uncountable( $value ) || preg_match( '/^(.*)[A-Za-z0-9\x{0080}-\x{FFFF}]$/u', $value ) == 0 ) {
 			return $value;
 		}
 
@@ -63,6 +66,7 @@ class Pluralizer {
 	 * Get the singular form of an English word.
 	 *
 	 * @param  string $value
+	 * @return string
 	 */
 	public static function singular( string $value ): string {
 		$singular = static::inflector()->singularize( $value );
@@ -101,6 +105,8 @@ class Pluralizer {
 
 	/**
 	 * Get the inflector instance.
+	 *
+	 * @return \Doctrine\Inflector\Inflector
 	 */
 	public static function inflector(): Inflector {
 		if ( ! isset( static::$inflector ) ) {
@@ -114,6 +120,7 @@ class Pluralizer {
 	 * Specify the language that should be used by the inflector.
 	 *
 	 * @param  string $language
+	 * @return void
 	 */
 	public static function use_language( string $language ): void {
 		static::$language = $language;

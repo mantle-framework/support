@@ -200,7 +200,11 @@ class Str {
 	 * @return string
 	 */
 	public static function camel( $value ) {
-		return static::$camel_cache[ $value ] ?? ( static::$camel_cache[ $value ] = lcfirst( static::studly( $value ) ) );
+		if ( isset( static::$camel_cache[ $value ] ) ) {
+			return static::$camel_cache[ $value ];
+		}
+
+		return static::$camel_cache[ $value ] = lcfirst( static::studly( $value ) );
 	}
 
 	/**
@@ -226,8 +230,9 @@ class Str {
 	 * @param  string                  $haystack
 	 * @param  string|iterable<string> $needles
 	 * @param  bool                    $ignore_case
+	 * @return bool
 	 */
-	public static function contains( $haystack, $needles, $ignore_case = false ): bool {
+	public static function contains( $haystack, $needles, $ignore_case = false ) {
 		if ( $ignore_case ) {
 			$haystack = mb_strtolower( $haystack );
 		}
@@ -255,8 +260,9 @@ class Str {
 	 * @param  string           $haystack
 	 * @param  iterable<string> $needles
 	 * @param  bool             $ignore_case
+	 * @return bool
 	 */
-	public static function contains_all( $haystack, $needles, bool $ignore_case = false ): bool {
+	public static function contains_all( $haystack, $needles, bool $ignore_case = false ) {
 		foreach ( $needles as $needle ) {
 			if ( ! static::contains( $haystack, $needle, $ignore_case ) ) {
 				return false;
@@ -271,8 +277,9 @@ class Str {
 	 *
 	 * @param  string                  $haystack
 	 * @param  string|iterable<string> $needles
+	 * @return bool
 	 */
-	public static function ends_with( $haystack, $needles ): bool {
+	public static function ends_with( $haystack, $needles ) {
 		if ( ! is_iterable( $needles ) ) {
 			$needles = (array) $needles;
 		}
@@ -351,8 +358,9 @@ class Str {
 	 *
 	 * @param  string|iterable<string> $pattern
 	 * @param  string                  $value
+	 * @return bool
 	 */
-	public static function is( $pattern, $value ): bool {
+	public static function is( $pattern, $value ) {
 		$value = (string) $value;
 
 		if ( ! is_iterable( $pattern ) ) {
@@ -398,8 +406,9 @@ class Str {
 	 * Determine if a given string is valid JSON.
 	 *
 	 * @param  string $value
+	 * @return bool
 	 */
-	public static function is_json( $value ): bool {
+	public static function is_json( $value ) {
 		if ( ! is_string( $value ) ) {
 			return false;
 		}
@@ -442,8 +451,9 @@ class Str {
 	 *
 	 * @param  string      $value
 	 * @param  string|null $encoding
+	 * @return int
 	 */
-	public static function length( $value, $encoding = null ): int {
+	public static function length( $value, $encoding = null ) {
 		return mb_strlen( $value, $encoding );
 	}
 
@@ -579,8 +589,9 @@ class Str {
 	 *
 	 * @param  string|iterable<string> $pattern
 	 * @param  string                  $value
+	 * @return bool
 	 */
-	public static function is_match( $pattern, $value ): bool {
+	public static function is_match( $pattern, $value ) {
 		$value = (string) $value;
 
 		if ( ! is_iterable( $pattern ) ) {
@@ -852,8 +863,9 @@ class Str {
 	 * Set the callable that will be used to generate random strings.
 	 *
 	 * @param  callable|null $factory
+	 * @return void
 	 */
-	public static function create_random_strings_using( callable $factory = null ): void {
+	public static function create_random_strings_using( callable $factory = null ) {
 		static::$random_string_factory = $factory;
 	}
 
@@ -862,8 +874,9 @@ class Str {
 	 *
 	 * @param  array         $sequence
 	 * @param  callable|null $when_missing
+	 * @return void
 	 */
-	public static function create_random_strings_using_sequence( array $sequence, $when_missing = null ): void {
+	public static function create_random_strings_using_sequence( array $sequence, $when_missing = null ) {
 		$next = 0;
 
 		$when_missing ??= function ( $length ) use ( &$next ) {
@@ -893,8 +906,10 @@ class Str {
 
 	/**
 	 * Indicate that random strings should be created normally and not using a custom factory.
+	 *
+	 * @return void
 	 */
-	public static function create_random_strings_normally(): void {
+	public static function create_random_strings_normally() {
 		static::$random_string_factory = null;
 	}
 
@@ -1019,9 +1034,11 @@ class Str {
 			$search = collect( $search )->all();
 		}
 
-		return $case_sensitive
+		$subject = $case_sensitive
 					? str_replace( $search, '', $subject )
 					: str_ireplace( $search, '', $subject );
+
+		return $subject;
 	}
 
 	/**
@@ -1031,7 +1048,7 @@ class Str {
 	 * @return string
 	 */
 	public static function reverse( string $value ) {
-		return implode( '', array_reverse( mb_str_split( $value ) ) );
+		return implode( array_reverse( mb_str_split( $value ) ) );
 	}
 
 	/**
@@ -1061,6 +1078,7 @@ class Str {
 	 * Convert the given string to title case.
 	 *
 	 * @param  string $value
+	 * @return string
 	 */
 	public static function title( string $value ): string {
 		return mb_convert_case( $value, MB_CASE_TITLE, 'UTF-8' );
@@ -1070,6 +1088,7 @@ class Str {
 	 * Convert the given string to title case for each word.
 	 *
 	 * @param  string $value
+	 * @return string
 	 */
 	public static function headline( string $value ): string {
 		$parts = explode( ' ', $value );
@@ -1087,6 +1106,7 @@ class Str {
 	 * Get the singular form of an English word.
 	 *
 	 * @param  string $value
+	 * @return string
 	 */
 	public static function singular( string $value ): string {
 		return Pluralizer::singular( $value );
@@ -1107,22 +1127,22 @@ class Str {
 		// Convert all dashes/underscores into separator.
 		$flip = '-' === $separator ? '_' : '-';
 
-		$title = preg_replace( '![' . preg_quote( $flip, null ) . ']+!u', $separator, (string) $title );
+		$title = preg_replace( '![' . preg_quote( $flip, null ) . ']+!u', $separator, $title );
 
 		// Replace dictionary words.
 		foreach ( $dictionary as $key => $value ) {
 			$dictionary[ $key ] = $separator . $value . $separator;
 		}
 
-		$title = str_replace( array_keys( $dictionary ), array_values( $dictionary ), (string) $title );
+		$title = str_replace( array_keys( $dictionary ), array_values( $dictionary ), $title );
 
 		// Remove all characters that are not the separator, letters, numbers, or whitespace.
 		$title = preg_replace( '![^' . preg_quote( $separator, null ) . '\pL\pN\s]+!u', '', static::lower( $title ) );
 
 		// Replace all separator characters and whitespace by a single separator.
-		$title = preg_replace( '![' . preg_quote( $separator, null ) . '\s]+!u', $separator, (string) $title );
+		$title = preg_replace( '![' . preg_quote( $separator, null ) . '\s]+!u', $separator, $title );
 
-		return trim( (string) $title, $separator );
+		return trim( $title, $separator );
 	}
 
 	/**
@@ -1142,7 +1162,7 @@ class Str {
 		if ( ! ctype_lower( $value ) ) {
 			$value = preg_replace( '/\s+/u', '', ucwords( $value ) );
 
-			$value = static::lower( preg_replace( '/(.)(?=[A-Z])/u', '$1' . $delimiter, (string) $value ) );
+			$value = static::lower( preg_replace( '/(.)(?=[A-Z])/u', '$1' . $delimiter, $value ) );
 		}
 
 		return static::$snake_cache[ $key ][ $delimiter ] = $value;
@@ -1155,7 +1175,7 @@ class Str {
 	 * @return string
 	 */
 	public static function squish( $value ) {
-		return preg_replace( '~(\s|\x{3164}|\x{1160})+~u', ' ', (string) preg_replace( '~^[\s\x{FEFF}]+|[\s\x{FEFF}]+$~u', '', $value ) );
+		return preg_replace( '~(\s|\x{3164}|\x{1160})+~u', ' ', preg_replace( '~^[\s\x{FEFF}]+|[\s\x{FEFF}]+$~u', '', $value ) );
 	}
 
 	/**
@@ -1163,8 +1183,9 @@ class Str {
 	 *
 	 * @param  string                  $haystack
 	 * @param  string|iterable<string> $needles
+	 * @return bool
 	 */
-	public static function starts_with( $haystack, $needles ): bool {
+	public static function starts_with( $haystack, $needles ) {
 		if ( ! is_iterable( $needles ) ) {
 			$needles = [ $needles ];
 		}
@@ -1195,7 +1216,7 @@ class Str {
 
 		$study_words = array_map( fn ( $word) => static::ucfirst( $word ), $words );
 
-		return static::$studly_cache[ $key ] = implode( '', $study_words );
+		return static::$studly_cache[ $key ] = implode( $study_words );
 	}
 
 	/**
@@ -1229,8 +1250,9 @@ class Str {
 	 * @param  string   $needle
 	 * @param  int      $offset
 	 * @param  int|null $length
+	 * @return int
 	 */
-	public static function substr_count( $haystack, $needle, $offset = 0, $length = null ): int {
+	public static function substr_count( $haystack, $needle, $offset = 0, $length = null ) {
 		if ( ! is_null( $length ) ) {
 			return substr_count( $haystack, $needle, $offset, $length );
 		}
@@ -1309,6 +1331,8 @@ class Str {
 
 	/**
 	 * Generate a UUID (version 4).
+	 *
+	 * @return \Ramsey\Uuid\UuidInterface
 	 */
 	public static function uuid(): UuidInterface {
 		return Uuid::uuid4();
@@ -1325,6 +1349,7 @@ class Str {
 	 *
 	 * @param string $contents Contents used to match against.
 	 * @param int    $char_pos Character position.
+	 * @return int
 	 */
 	public static function line_number( string $contents, int $char_pos ): int {
 		[ $before ] = str_split( $contents, $char_pos );
@@ -1335,6 +1360,7 @@ class Str {
 	 * Add a trailing slash to a string.
 	 *
 	 * @param string $string String to trail.
+	 * @return string
 	 */
 	public static function trailing_slash( string $string ): string {
 		return rtrim( $string, '/' ) . '/';
@@ -1344,6 +1370,7 @@ class Str {
 	 * Remove a trailing slash from a string.
 	 *
 	 * @param string $string String to untrail.
+	 * @return string
 	 */
 	public static function untrailing_slash( string $string ): string {
 		return rtrim( $string, '/' );
@@ -1353,6 +1380,7 @@ class Str {
 	 * Add a preceding slash to a string.
 	 *
 	 * @param string $string String to proceed.
+	 * @return string
 	 */
 	public static function preceding_slash( string $string ): string {
 		return '/' . static::unpreceding_slash( $string );
@@ -1362,6 +1390,7 @@ class Str {
 	 * Remove a preceding slash from a string.
 	 *
 	 * @param string $string String to proceed.
+	 * @return string
 	 */
 	public static function unpreceding_slash( string $string ): string {
 		return ltrim( $string, '/\\' );
@@ -1369,8 +1398,10 @@ class Str {
 
 	/**
 	 * Remove all strings from the casing caches.
+	 *
+	 * @return void
 	 */
-	public static function flush_cache(): void {
+	public static function flush_cache() {
 		static::$snake_cache  = [];
 		static::$camel_cache  = [];
 		static::$studly_cache = [];
