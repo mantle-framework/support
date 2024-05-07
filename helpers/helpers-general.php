@@ -15,6 +15,7 @@ use Countable;
 use Exception;
 use Mantle\Container\Container;
 use Mantle\Events\Dispatcher;
+use Mantle\Database\Factory\Factory;
 use Mantle\Support\Collection;
 use Mantle\Support\Higher_Order_Tap_Proxy;
 use Mantle\Support\Str;
@@ -23,8 +24,10 @@ use Mantle\Support\Str;
  * Determine if the given value is "blank".
  *
  * @param mixed $value Value to check.
+ *
+ * @return bool
  */
-function blank( $value ): bool {
+function blank( $value ) {
 	if ( is_null( $value ) ) {
 		return true;
 	}
@@ -48,9 +51,11 @@ function blank( $value ): bool {
  * Get the class "basename" of the given object / class.
  *
  * @param string|object $class Class or object to basename.
+ *
+ * @return string
  */
-function class_basename( string|object $class ): string {
-	$class = is_object( $class ) ? $class::class : $class;
+function class_basename( $class ) {
+	$class = is_object( $class ) ? get_class( $class ) : $class;
 
 	return basename( str_replace( '\\', '/', $class ) );
 }
@@ -59,10 +64,12 @@ function class_basename( string|object $class ): string {
  * Returns all traits used by a class, its parent classes and trait of their traits.
  *
  * @param object|string $class Class or object to analyze.
+ *
+ * @return array
  */
-function class_uses_recursive( string|object $class ): array {
+function class_uses_recursive( $class ) {
 	if ( is_object( $class ) ) {
-		$class = $class::class;
+		$class = get_class( $class );
 	}
 
 	$results = [];
@@ -94,7 +101,7 @@ function backtickit( string $string ): string {
  * @param mixed $callable The plugin callback.
  * @return string The readable function name, or an empty string if untranslatable.
  */
-function get_callable_fqn( mixed $callable ): string {
+function get_callable_fqn( $callable ): string {
 	$function_name = '';
 
 	if ( \is_string( $callable ) ) {
@@ -106,7 +113,7 @@ function get_callable_fqn( mixed $callable ): string {
 		$access = '';
 
 		if ( \is_object( $callable[0] ) ) {
-			$class  = $callable[0]::class;
+			$class  = \get_class( $callable[0] );
 			$access = '->';
 		}
 
@@ -121,7 +128,7 @@ function get_callable_fqn( mixed $callable ): string {
 	}
 
 	if ( \is_object( $callable ) ) {
-		$function_name = $callable::class;
+		$function_name = \get_class( $callable );
 
 		if ( ! ( $callable instanceof \Closure ) ) {
 			$function_name .= '->__invoke()';
@@ -140,7 +147,7 @@ function get_callable_fqn( mixed $callable ): string {
  * @param  \Mantle\Contracts\Support\Arrayable<TKey, TValue>|iterable<TKey, TValue>|null $value Value to convert to a collection.
  * @return \Mantle\Support\Collection<TKey, TValue>
  */
-function collect( $value = null ): Collection {
+function collect( $value = null ) {
 	return new Collection( $value );
 }
 
@@ -148,8 +155,10 @@ function collect( $value = null ): Collection {
  * Determine if a value is "filled".
  *
  * @param mixed $value Value to check.
+ *
+ * @return bool
  */
-function filled( mixed $value ): bool {
+function filled( $value ) {
 	return ! blank( $value );
 }
 
@@ -191,7 +200,7 @@ function preg_replace_array( $pattern, array $replacements, $subject ) {
 	return preg_replace_callback(
 		$pattern,
 		function () use ( &$replacements ) {
-			foreach ( $replacements as $replacement ) {
+			foreach ( $replacements as $key => $value ) {
 				return array_shift( $replacements );
 			}
 		},
@@ -256,7 +265,7 @@ function str( ?string $string = null ) {
 		};
 	}
 
-	return Str::of( $string );
+	return Str::of( (string) $string );
 }
 
 /**
@@ -373,13 +382,10 @@ function with( $value, callable $callback = null ) {
  * @param string   $action Action to listen to.
  * @param callable $callback Callback to invoke.
  * @param int      $priority
+ * @return void
  */
 function add_action( string $hook, callable $callable, int $priority = 10 ): void {
-	if ( ! class_exists( Dispatcher::class ) ) {
-		\add_action( $hook, $callable, $priority, 99 );
-	} else {
-		Container::get_instance()->make( Dispatcher::class )->listen( $hook, $callable, $priority );
-	}
+	Container::get_instance()->make( Dispatcher::class )->listen( $hook, $callable, $priority );
 }
 
 /**
@@ -388,13 +394,10 @@ function add_action( string $hook, callable $callable, int $priority = 10 ): voi
  * @param string   $action Action to listen to.
  * @param callable $callback Callback to invoke.
  * @param int      $priority
+ * @return void
  */
 function add_filter( string $hook, callable $callable, int $priority = 10 ): void {
-	if ( ! class_exists( Dispatcher::class ) ) {
-		\add_filter( $hook, $callable, $priority, 99 );
-	} else {
-		Container::get_instance()->make( Dispatcher::class )->listen( $hook, $callable, $priority );
-	}
+	Container::get_instance()->make( Dispatcher::class )->listen( $hook, $callable, $priority );
 }
 
 /**
@@ -416,6 +419,7 @@ function event( ...$args ) {
  * @param string $hook Hook to check for.
  * @param callable $callable Callable to invoke.
  * @param int $priority Hook priority.
+ * @return void
  */
 function hook_callable( string $hook, callable $callable, int $priority = 10 ): void {
 	if ( ! did_action( $hook ) && ! doing_action( $hook ) ) {
