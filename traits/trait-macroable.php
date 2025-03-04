@@ -28,8 +28,10 @@ trait Macroable {
 	 *
 	 * @param string          $name
 	 * @param object|callable $macro
+	 *
+	 * @return void
 	 */
-	public static function macro( $name, $macro ): void {
+	public static function macro( $name, $macro ) {
 		static::$macros[ $name ] = $macro;
 	}
 
@@ -39,10 +41,11 @@ trait Macroable {
 	 * @param object $mixin
 	 * @param bool   $replace
 	 *
+	 * @return void
 	 *
 	 * @throws \ReflectionException
 	 */
-	public static function mixin( $mixin, $replace = true ): void {
+	public static function mixin( $mixin, $replace = true ) {
 		$methods = ( new ReflectionClass( $mixin ) )->getMethods(
 			ReflectionMethod::IS_PUBLIC | ReflectionMethod::IS_PROTECTED
 		);

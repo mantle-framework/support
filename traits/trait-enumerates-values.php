@@ -2,14 +2,14 @@
 /**
  * Enumerates_Values trait file.
  *
- * phpcs:disable Generic.CodeAnalysis.UnusedFunctionParameter.FoundAfterLastUsed
- * phpcs:disable Squiz.Commenting.FunctionComment.MissingParamComment
- * phpcs:disable Squiz.Commenting.FunctionComment.ParamNameNoMatch
- * phpcs:disable Squiz.Commenting.FunctionComment.MissingParamTag
- * phpcs:disable WordPress.PHP.StrictInArray.MissingTrueStrict
- *
  * @package Mantle
  */
+
+// phpcs:disable Squiz.Commenting.FunctionComment.MissingParamComment
+
+// phpcs:disable Squiz.Commenting.FunctionComment.ParamNameNoMatch
+
+// phpcs:disable Squiz.Commenting.FunctionComment.MissingParamTag
 
 namespace Mantle\Support\Traits;
 
@@ -17,6 +17,7 @@ use Closure;
 use Exception;
 use Mantle\Contracts\Support\Arrayable;
 use Mantle\Contracts\Support\Jsonable;
+use function Mantle\Support\Helpers\data_get;
 use Mantle\Support\Arr;
 use Mantle\Support\Collection;
 use Mantle\Support\Enumerable;
@@ -24,8 +25,6 @@ use JsonSerializable;
 use Mantle\Support\Higher_Order_Collection_Proxy;
 use Symfony\Component\VarDumper\VarDumper;
 use Traversable;
-
-use function Mantle\Support\Helpers\data_get;
 
 /**
  * Enumerate_Values trait.
@@ -163,7 +162,9 @@ trait Enumerates_Values {
 	public function contains_strict( $key, $value = null ) {
 		if ( func_num_args() === 2 ) {
 			return $this->contains(
-				fn ( $item ) => data_get( $item, $key ) === $value
+				function ( $item ) use ( $key, $value ) {
+					return data_get( $item, $key ) === $value;
+				}
 			);
 		}
 
@@ -184,8 +185,9 @@ trait Enumerates_Values {
 	 * Dump the items and end the script.
 	 *
 	 * @param  mixed ...$args
+	 * @return void
 	 */
-	public function dd( ...$args ): never {
+	public function dd( ...$args ): void {
 		$this->dump( ...$args );
 
 		exit( 1 );
@@ -193,6 +195,8 @@ trait Enumerates_Values {
 
 	/**
 	 * Dump the items.
+	 *
+	 * @return static
 	 */
 	public function dump(): static {
 		( new static( func_get_args() ) )
@@ -313,7 +317,7 @@ trait Enumerates_Values {
 	public function map_to_groups( callable $callback ) {
 		$groups = $this->map_to_dictionary( $callback );
 
-		return $groups->map( [ $this, 'make' ] ); // @phpstan-ignore-line return.type
+		return $groups->map( [ $this, 'make' ] );
 	}
 
 	/**
@@ -339,7 +343,9 @@ trait Enumerates_Values {
 	 */
 	public function map_into( $class ) {
 		return $this->map(
-			fn ( $value, $key ) => new $class( $value, $key )
+			function ( $value, $key ) use ( $class ) {
+				return new $class( $value, $key );
+			}
 		);
 	}
 
@@ -353,11 +359,17 @@ trait Enumerates_Values {
 		$callback = $this->value_retriever( $callback );
 
 		return $this->map(
-			fn ( $value ) => $callback( $value )
+			function ( $value ) use ( $callback ) {
+				return $callback( $value );
+			}
 		)->filter(
-			fn ( $value ) => ! is_null( $value )
+			function ( $value ) {
+				return ! is_null( $value );
+			}
 		)->reduce(
-			fn ( $result, $value ) => is_null( $result ) || $value < $result ? $value : $result
+			function ( $result, $value ) {
+				return is_null( $result ) || $value < $result ? $value : $result;
+			}
 		);
 	}
 
@@ -371,7 +383,9 @@ trait Enumerates_Values {
 		$callback = $this->value_retriever( $callback );
 
 		return $this->filter(
-			fn ( $value ) => ! is_null( $value )
+			function ( $value ) {
+				return ! is_null( $value );
+			}
 		)->reduce(
 			function ( $result, $item ) use ( $callback ) {
 				$value = $callback( $item );
@@ -429,13 +443,17 @@ trait Enumerates_Values {
 	 */
 	public function sum( $callback = null ) {
 		if ( is_null( $callback ) ) {
-			$callback = fn ( $value ) => $value;
+			$callback = function ( $value ) {
+				return $value;
+			};
 		} else {
 			$callback = $this->value_retriever( $callback );
 		}
 
 		return $this->reduce(
-			fn ( $result, $item ) => $result + $callback( $item ),
+			function ( $result, $item ) use ( $callback ) {
+				return $result + $callback( $item );
+			},
 			0
 		);
 	}
@@ -449,7 +467,7 @@ trait Enumerates_Values {
 	 * @param  (callable( $this): TWhenEmptyReturnType)|null  $default The callback to apply if the collection is not empty.
 	 * @return $this|TWhenEmptyReturnType
 	 */
-	public function when_empty( callable $callback, ?callable $default = null ) {
+	public function when_empty( callable $callback, callable $default = null ) {
 		return $this->when( $this->is_empty(), $callback, $default );
 	}
 
@@ -462,7 +480,7 @@ trait Enumerates_Values {
 	 * @param  (callable( $this): TWhenNotEmptyReturnType)|null  $default The callback to apply if the collection is empty.
 	 * @return $this|TWhenNotEmptyReturnType
 	 */
-	public function when_not_empty( callable $callback, ?callable $default = null ) {
+	public function when_not_empty( callable $callback, callable $default = null ) {
 		return $this->when( $this->is_not_empty(), $callback, $default );
 	}
 
@@ -475,7 +493,7 @@ trait Enumerates_Values {
 	 * @param  (callable( $this): TUnlessEmptyReturnType)|null  $default The callback to apply if the collection is empty.
 	 * @return $this|TUnlessEmptyReturnType
 	 */
-	public function unless_empty( callable $callback, ?callable $default = null ) {
+	public function unless_empty( callable $callback, callable $default = null ) {
 		return $this->when_not_empty( $callback, $default );
 	}
 
@@ -488,7 +506,7 @@ trait Enumerates_Values {
 	 * @param  (callable( $this): TUnlessNotEmptyReturnType)|null  $default The callback to apply if the collection is not empty.
 	 * @return $this|TUnlessNotEmptyReturnType
 	 */
-	public function unless_not_empty( callable $callback, ?callable $default = null ) {
+	public function unless_not_empty( callable $callback, callable $default = null ) {
 		return $this->when_empty( $callback, $default );
 	}
 
@@ -547,7 +565,9 @@ trait Enumerates_Values {
 		$values = $this->get_arrayable_items( $values );
 
 		return $this->filter(
-			fn ( $item ) => in_array( data_get( $item, $key ), $values, $strict ) // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+			function ( $item ) use ( $key, $values, $strict ) {
+				return in_array( data_get( $item, $key ), $values, $strict );
+			}
 		);
 	}
 
@@ -582,7 +602,9 @@ trait Enumerates_Values {
 	 */
 	public function where_not_between( $key, $values ) {
 		return $this->filter(
-			fn ( $item ) => data_get( $item, $key ) < reset( $values ) || data_get( $item, $key ) > end( $values )
+			function ( $item ) use ( $key, $values ) {
+				return data_get( $item, $key ) < reset( $values ) || data_get( $item, $key ) > end( $values );
+			}
 		);
 	}
 
@@ -598,7 +620,9 @@ trait Enumerates_Values {
 		$values = $this->get_arrayable_items( $values );
 
 		return $this->reject(
-			fn ( $item ) => in_array( data_get( $item, $key ), $values, $strict ) // phpcs:ignore WordPress.PHP.StrictInArray.MissingTrueStrict
+			function ( $item ) use ( $key, $values, $strict ) {
+				return in_array( data_get( $item, $key ), $values, $strict );
+			}
 		);
 	}
 
@@ -661,9 +685,11 @@ trait Enumerates_Values {
 		$use_as_callable = $this->use_as_callable( $callback );
 
 		return $this->filter(
-			fn ( $value, $key ) => $use_as_callable
+			function ( $value, $key ) use ( $callback, $use_as_callable ) {
+				return $use_as_callable
 				? ! $callback( $value, $key )
-				: $value != $callback // phpcs:ignore Universal.Operators.StrictComparisons.LooseNotEqual, WordPress.PHP.StrictComparisons.LooseComparison
+				: $value != $callback;
+			}
 		);
 	}
 
@@ -717,17 +743,10 @@ trait Enumerates_Values {
 	 */
 	public function to_array() {
 		return $this->map(
-			fn ( $value ) => $value instanceof Arrayable ? $value->to_array() : $value,
+			function ( $value ) {
+				return $value instanceof Arrayable ? $value->to_array() : $value;
+			}
 		)->all();
-	}
-
-	/**
-	 * Alias for the "to_array" method.
-	 *
-	 * @return array<TKey, TValue>
-	 */
-	public function toArray() { // phpcs:ignore WordPress.NamingConventions.ValidFunctionName.MethodNameInvalid
-		return $this->to_array();
 	}
 
 	/**
@@ -770,12 +789,16 @@ trait Enumerates_Values {
 	 */
 	public function count_by( $callback = null ) {
 		if ( is_null( $callback ) ) {
-			$callback = fn ( $value ) => $value;
+			$callback = function ( $value ) {
+				return $value;
+			};
 		}
 
 		return new static(
 			$this->group_by( $callback )->map(
-				fn ( $value ) => $value->count()
+				function ( $value ) {
+					return $value->count();
+				}
 			)
 		);
 	}
@@ -793,8 +816,9 @@ trait Enumerates_Values {
 	 * Add a method to the list of proxied methods.
 	 *
 	 * @param  string $method
+	 * @return void
 	 */
-	public static function proxy( $method ): void {
+	public static function proxy( $method ) {
 		static::$proxies[] = $method; // phpcs:ignore WordPressVIPMinimum.Variables.VariableAnalysis.StaticOutsideClass
 	}
 
@@ -864,10 +888,12 @@ trait Enumerates_Values {
 
 			$strings = array_filter(
 				[ $retrieved, $value ],
-				fn ( $value ) => is_string( $value ) || ( is_object( $value ) && method_exists( $value, '__toString' ) )
+				function ( $value ) {
+					return is_string( $value ) || ( is_object( $value ) && method_exists( $value, '__toString' ) );
+				}
 			);
 
-			if ( count( $strings ) < 2 && count( array_filter( [ $retrieved, $value ], 'is_object' ) ) === 1 ) {
+			if ( count( $strings ) < 2 && count( array_filter( [ $retrieved, $value ], 'is_object' ) ) == 1 ) {
 				return in_array( $operator, [ '!=', '<>', '!==' ] );
 			}
 
@@ -875,10 +901,10 @@ trait Enumerates_Values {
 				default:
 				case '=':
 				case '==':
-					return $retrieved == $value; // phpcs:ignore Universal.Operators.StrictComparisons.LooseEqual
+					return $retrieved == $value;
 				case '!=':
 				case '<>':
-					return $retrieved !== $value;
+					return $retrieved != $value;
 				case '<':
 					return $retrieved < $value;
 				case '>':
@@ -899,8 +925,9 @@ trait Enumerates_Values {
 	 * Determine if the given value is callable, but not a string.
 	 *
 	 * @param  mixed $value
+	 * @return bool
 	 */
-	protected function use_as_callable( $value ): bool {
+	protected function use_as_callable( $value ) {
 		return ! is_string( $value ) && is_callable( $value );
 	}
 
