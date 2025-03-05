@@ -15,19 +15,17 @@ use Countable;
 use Exception;
 use Mantle\Container\Container;
 use Mantle\Events\Dispatcher;
-use Mantle\Database\Factory\Factory;
 use Mantle\Support\Collection;
 use Mantle\Support\Higher_Order_Tap_Proxy;
 use Mantle\Support\Str;
+use Mantle\Support\Stringable;
 
 /**
  * Determine if the given value is "blank".
  *
  * @param mixed $value Value to check.
- *
- * @return bool
  */
-function blank( $value ) {
+function blank( $value ): bool {
 	if ( is_null( $value ) ) {
 		return true;
 	}
@@ -51,11 +49,9 @@ function blank( $value ) {
  * Get the class "basename" of the given object / class.
  *
  * @param string|object $class Class or object to basename.
- *
- * @return string
  */
-function class_basename( $class ) {
-	$class = is_object( $class ) ? get_class( $class ) : $class;
+function class_basename( string|object $class ): string {
+	$class = is_object( $class ) ? $class::class : $class;
 
 	return basename( str_replace( '\\', '/', $class ) );
 }
@@ -64,12 +60,10 @@ function class_basename( $class ) {
  * Returns all traits used by a class, its parent classes and trait of their traits.
  *
  * @param object|string $class Class or object to analyze.
- *
- * @return array
  */
-function class_uses_recursive( $class ) {
+function class_uses_recursive( string|object $class ): array {
 	if ( is_object( $class ) ) {
-		$class = get_class( $class );
+		$class = $class::class;
 	}
 
 	$results = [];
@@ -101,7 +95,7 @@ function backtickit( string $string ): string {
  * @param mixed $callable The plugin callback.
  * @return string The readable function name, or an empty string if untranslatable.
  */
-function get_callable_fqn( $callable ): string {
+function get_callable_fqn( mixed $callable ): string {
 	$function_name = '';
 
 	if ( \is_string( $callable ) ) {
@@ -113,7 +107,7 @@ function get_callable_fqn( $callable ): string {
 		$access = '';
 
 		if ( \is_object( $callable[0] ) ) {
-			$class  = \get_class( $callable[0] );
+			$class  = $callable[0]::class;
 			$access = '->';
 		}
 
@@ -128,7 +122,7 @@ function get_callable_fqn( $callable ): string {
 	}
 
 	if ( \is_object( $callable ) ) {
-		$function_name = \get_class( $callable );
+		$function_name = $callable::class;
 
 		if ( ! ( $callable instanceof \Closure ) ) {
 			$function_name .= '->__invoke()';
@@ -147,7 +141,7 @@ function get_callable_fqn( $callable ): string {
  * @param  \Mantle\Contracts\Support\Arrayable<TKey, TValue>|iterable<TKey, TValue>|null $value Value to convert to a collection.
  * @return \Mantle\Support\Collection<TKey, TValue>
  */
-function collect( $value = null ) {
+function collect( $value = null ): Collection {
 	return new Collection( $value );
 }
 
@@ -155,10 +149,8 @@ function collect( $value = null ) {
  * Determine if a value is "filled".
  *
  * @param mixed $value Value to check.
- *
- * @return bool
  */
-function filled( $value ) {
+function filled( mixed $value ): bool {
 	return ! blank( $value );
 }
 
@@ -172,7 +164,7 @@ function filled( $value ) {
  * @return mixed
  */
 function object_get( $object, $key, $default = null ) {
-	if ( is_null( $key ) || trim( $key ) == '' ) {
+	if ( is_null( $key ) || trim( $key ) === '' ) {
 		return $object;
 	}
 
@@ -200,7 +192,7 @@ function preg_replace_array( $pattern, array $replacements, $subject ) {
 	return preg_replace_callback(
 		$pattern,
 		function () use ( &$replacements ) {
-			foreach ( $replacements as $key => $value ) {
+			foreach ( $replacements as $replacement ) {
 				return array_shift( $replacements );
 			}
 		},
@@ -227,8 +219,8 @@ function retry( $times, callable $callback, $sleep = 0, $when = null ) {
 
 	// phpcs:ignore Generic.PHP.DiscourageGoto.Found
 	beginning:
-	$attempts ++;
-	$times --;
+	$attempts++;
+	$times--;
 
 	try {
 		return $callback( $attempts );
@@ -249,23 +241,19 @@ function retry( $times, callable $callback, $sleep = 0, $when = null ) {
 /**
  * Get a new stringable object from the given string.
  *
- * @param  string|null  $string
- * @return \Mantle\Support\Stringable|mixed
+ * @param string $string
  */
-function str( ?string $string = null ) {
-	if ( is_null( $string ) ) {
-		return new class() {
-			public function __call( $method, $parameters ) {
-				return Str::$method( ...$parameters );
-			}
+function str( string $string = '' ): Stringable {
+	return Str::of( $string );
+}
 
-			public function __toString() {
-				return '';
-			}
-		};
-	}
-
-	return Str::of( (string) $string );
+/**
+ * Alias to `str()`.
+ *
+ * @param string $string
+ */
+function stringable( string $string = '' ): Stringable {
+	return Str::of( $string );
 }
 
 /**
@@ -289,9 +277,9 @@ function tap( $value, $callback = null ) {
 /**
  * Throw the given exception if the given condition is true.
  *
- * @param mixed             $condition Condition to check.
- * @param \Throwable|string $exception Exception to throw.
- * @param array             ...$parameters Params to pass to a new $exception if
+ * @param mixed                               $condition Condition to check.
+ * @param \Throwable|class-string<\Throwable> $exception Exception to throw.
+ * @param array                               ...$parameters Params to pass to a new $exception if
  *                                         $exception is a string (classname).
  *
  * @return mixed
@@ -299,7 +287,13 @@ function tap( $value, $callback = null ) {
  */
 function throw_if( $condition, $exception, ...$parameters ) {
 	if ( $condition ) {
-		throw ( is_string( $exception ) ? new $exception( ...$parameters ) : $exception );
+		if ( is_string( $exception ) ) {
+			$e = new $exception( ...$parameters );
+		} else {
+			$e = $exception;
+		}
+
+		throw $e;
 	}
 
 	return $condition;
@@ -309,7 +303,7 @@ function throw_if( $condition, $exception, ...$parameters ) {
  * Throw the given exception unless the given condition is true.
  *
  * @param mixed             $condition Condition to check.
- * @param \Throwable|string $exception Exception to throw.
+ * @param \Throwable|class-string<\Throwable> $exception Exception to throw.
  * @param array             ...$parameters Params to pass to a new $exception if
  *                                         $exception is a string (classname).
  *
@@ -318,7 +312,13 @@ function throw_if( $condition, $exception, ...$parameters ) {
  */
 function throw_unless( $condition, $exception, ...$parameters ) {
 	if ( ! $condition ) {
-		throw ( is_string( $exception ) ? new $exception( ...$parameters ) : $exception );
+		if ( is_string( $exception ) ) {
+			$e = new $exception( ...$parameters );
+		} else {
+			$e = $exception;
+		}
+
+		throw $e;
 	}
 
 	return $condition;
@@ -372,8 +372,66 @@ function transform( $value, callable $callback, $default = null ) {
  *
  * @return mixed
  */
-function with( $value, callable $callback = null ) {
+function with( mixed $value, ?callable $callback = null ) {
 	return is_null( $callback ) ? $value : $callback( $value );
+}
+
+/**
+ * Manage the concatenation of class names based on conditions.
+ *
+ * A port of the classnames npm package.
+ *
+ * @param mixed ...$args Class names to concatenate.
+ */
+function classname( ...$args ): string {
+	$classes = [];
+
+	foreach ( $args as $arg ) {
+		if ( is_string( $arg ) ) {
+			$classes[] = $arg;
+		} elseif ( is_array( $arg ) ) {
+			if ( array_is_list( $arg ) ) {
+				$classes[] = classname( ...$arg );
+			} else {
+				foreach ( $arg as $key => $value ) {
+					// If the key is numeric, it's a value. Otherwise, check if it's truthy.
+					if ( is_int( $key ) ) {
+						$classes[] = $value;
+					} elseif ( $value ) {
+						$classes[] = $key;
+					}
+				}
+			}
+		} elseif ( is_object( $arg ) ) {
+			$classes[] = classname( ...class_uses_recursive( $arg ) );
+		} elseif ( is_int( $arg ) ) {
+			$classes[] = (string) $arg;
+		} elseif ( is_bool( $arg ) ) {
+			$classes[] = $arg ? 'true' : 'false';
+		}
+	}
+
+	return collect( $classes )->filter()->implode_str( ' ' )->trim();
+}
+
+/**
+ * Display the class names based on conditions.
+ *
+ * @param mixed ...$args Class names to concatenate.
+ */
+function the_classnames( ...$args ): void {
+	echo esc_attr( classname( ...$args ) );
+}
+
+/**
+ * Capture the output of a callback.
+ *
+ * @param callable $callback
+ */
+function capture( callable $callback ): string {
+	ob_start();
+	$callback();
+	return ob_get_clean();
 }
 
 /**
@@ -382,10 +440,13 @@ function with( $value, callable $callback = null ) {
  * @param string   $action Action to listen to.
  * @param callable $callback Callback to invoke.
  * @param int      $priority
- * @return void
  */
 function add_action( string $hook, callable $callable, int $priority = 10 ): void {
-	Container::get_instance()->make( Dispatcher::class )->listen( $hook, $callable, $priority );
+	if ( ! class_exists( Dispatcher::class ) ) {
+		\add_action( $hook, $callable, $priority, 99 );
+	} else {
+		Container::get_instance()->make( Dispatcher::class )->listen( $hook, $callable, $priority );
+	}
 }
 
 /**
@@ -394,10 +455,13 @@ function add_action( string $hook, callable $callable, int $priority = 10 ): voi
  * @param string   $action Action to listen to.
  * @param callable $callback Callback to invoke.
  * @param int      $priority
- * @return void
  */
 function add_filter( string $hook, callable $callable, int $priority = 10 ): void {
-	Container::get_instance()->make( Dispatcher::class )->listen( $hook, $callable, $priority );
+	if ( ! class_exists( Dispatcher::class ) ) {
+		\add_filter( $hook, $callable, $priority, 99 );
+	} else {
+		Container::get_instance()->make( Dispatcher::class )->listen( $hook, $callable, $priority );
+	}
 }
 
 /**
@@ -419,7 +483,6 @@ function event( ...$args ) {
  * @param string $hook Hook to check for.
  * @param callable $callable Callable to invoke.
  * @param int $priority Hook priority.
- * @return void
  */
 function hook_callable( string $hook, callable $callable, int $priority = 10 ): void {
 	if ( ! did_action( $hook ) && ! doing_action( $hook ) ) {
@@ -449,7 +512,7 @@ function validate_file( $file, $allowed_files = [] ) {
 		return in_array( $retval, [ 0, 2 ], true ) ? 0 : $retval;
 	}
 
-	if ( ! is_scalar( $file ) || '' === $file ) {
+	if ( ! is_scalar( $file ) || '' === $file ) { // @phpstan-ignore-line function.alreadyNarrowedType
 		return 0;
 	}
 
@@ -475,4 +538,34 @@ function validate_file( $file, $allowed_files = [] ) {
 
 	// Absolute Windows drive paths ARE allowed.
 	return 0;
+}
+
+/**
+ * Defer the execution of a function until after the response is sent to the
+ * page.
+ *
+ * When used outside of the Mantle Framework, the callback will be added to the
+ * 'shutdown' hook after sending the response to the client.
+ *
+ * @param callable $callback Callback to defer.
+ */
+function defer( callable $callback ): void {
+	if ( ! function_exists( 'app' ) ) {
+		\add_action(
+			'shutdown',
+			function () use ( $callback ): void {
+				if ( function_exists( 'fastcgi_finish_request' ) ) {
+					fastcgi_finish_request();
+				} elseif ( function_exists( 'litespeed_finish_request' ) ) {
+					litespeed_finish_request();
+				}
+
+				$callback();
+			},
+		);
+
+		return;
+	}
+
+	app()->terminating( $callback );
 }

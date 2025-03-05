@@ -1,6 +1,6 @@
 <?php
 /**
- * Action class file
+ * Filter class file
  *
  * @package Mantle
  */
@@ -10,12 +10,12 @@ namespace Mantle\Support\Attributes;
 use Attribute;
 
 /**
- * Hook Action Attribute
+ * Hook Filter Attribute
  *
  * Used to hook a method to an WordPress hook at a specific priority.
  */
 #[Attribute( Attribute::IS_REPEATABLE | Attribute::TARGET_METHOD | Attribute::TARGET_FUNCTION )]
-class Action {
+class Filter {
 	/**
 	 * Constructor.
 	 *
