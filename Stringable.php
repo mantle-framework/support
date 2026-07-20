@@ -41,7 +41,6 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	 * Create a new instance of the class.
 	 *
 	 * @param  string $value
-	 * @return void
 	 */
 	public function __construct( $value = '' ) {
 		$this->value = (string) $value;
@@ -247,17 +246,17 @@ class Stringable implements ArrayAccess, JsonSerializable, \Stringable {
 	/**
 	 * Split a string using a regular expression or by length.
 	 *
-	 * @param  string|int<1, max> $pattern
-	 * @param  int<1, max>        $limit
-	 * @param  int                $flags
+	 * @param  string|int $pattern
+	 * @param  int        $limit
+	 * @param  int        $flags
 	 * @return Collection<int, mixed>
 	 */
-	public function split( string|int $pattern, int $limit = 1, int $flags = 0 ) {
-		if ( filter_var( $pattern, FILTER_VALIDATE_INT ) !== false ) {
+	public function split( string|int $pattern, int $limit = -1, int $flags = 0 ) {
+		if ( is_int( $pattern ) || is_numeric( $pattern ) ) {
 			return collect( mb_str_split( $this->value, max( 1, (int) $pattern ) ) );
 		}
 
-		$segments = preg_split( (string) $pattern, $this->value, $limit, $flags );
+		$segments = preg_split( $pattern, $this->value, $limit, $flags );
 
 		return empty( $segments ) ? collect() : collect( $segments );
 	}

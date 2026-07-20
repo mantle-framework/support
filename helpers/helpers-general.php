@@ -12,12 +12,17 @@
 
 namespace Mantle\Support\Helpers;
 
-use Carbon\Carbon;
+use ArrayAccess;
+use Carbon\Carbon as BaseCarbon;
 use Countable;
 use Exception;
+use JsonSerializable;
+use Mantle\Contracts\Support\Arrayable;
+use Mantle\Contracts\Support\Jsonable;
 use Mantle\Container\Container;
 use Mantle\Events\Dispatcher;
 use Mantle\Support\Collection;
+use Mantle\Support\Enumerable;
 use Mantle\Support\Higher_Order_Tap_Proxy;
 use Mantle\Support\HTML;
 use Mantle\Support\Str;
@@ -146,10 +151,10 @@ function get_callable_fqn( mixed $callable ): string {
  * @template TKey of array-key = array-key
  * @template TValue of mixed = mixed
  *
- * @param  iterable<TKey, TValue> $value Value to convert to a collection.
- * @return \Mantle\Support\Collection<TKey, TValue>
+ * @param iterable<TKey, TValue>|Arrayable<TKey, TValue>|Jsonable|JsonSerializable $value The value to create the collection from.
+ * @return Collection<TKey, TValue>
  */
-function collect( $value = [] ): Collection {
+function collect( mixed $value = [] ): Collection {
 	return new Collection( $value );
 }
 
@@ -244,8 +249,6 @@ function retry( $times, callable $callback, $sleep = 0, $when = null ) {
 		// phpcs:ignore Generic.PHP.DiscourageGoto.Found
 		goto beginning;
 	}
-
-	return null;
 }
 
 /**
@@ -443,12 +446,15 @@ function html_string( string $html ): HTML {
  * Capture the output of a callback.
  *
  * @param callable $callback Callback to execute.
- * @return false|string The captured output, or false on failure.
+ * @return string The captured output.
  */
-function capture( callable $callback ): string|false {
+function capture( callable $callback ): string {
 	ob_start();
 	$callback();
-	return ob_get_clean();
+
+	$output = ob_get_clean();
+
+	return false === $output ? '' : $output;
 }
 
 /**
@@ -568,7 +574,7 @@ function defer( callable $callback, int $priority = 10 ): void {
 	\add_action(
 		'shutdown',
 		function () use ( $callback, &$request_sent ): void {
-			if ( $request_sent ) {
+			if ( ! $request_sent ) {
 				if ( function_exists( 'fastcgi_finish_request' ) ) {
 					fastcgi_finish_request();
 				} elseif ( function_exists( 'litespeed_finish_request' ) ) {
@@ -629,14 +635,14 @@ function dd_backtrace( ?int $limit = null, bool $with_arguments = false ): never
 /**
  * Create a new Carbon instance for the current time.
  *
- * @todo Allow this to be faked and mocked during testing.
+ * Supports time mocking during testing via Carbon::set_test_now().
  *
  * @param \DateTimeZone|string|null $tz Timezone.
  */
-function now( \DateTimeZone|string|null $tz = null ): Carbon {
+function now( \DateTimeZone|string|null $tz = null ): \Mantle\Support\Carbon {
 	if ( ! $tz ) {
 		$tz = function_exists( 'wp_timezone' ) ? wp_timezone() : new \DateTimeZone( 'UTC' );
 	}
 
-	return Carbon::now( $tz );
+	return \Mantle\Support\Carbon::now( $tz );
 }
